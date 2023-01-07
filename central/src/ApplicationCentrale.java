@@ -1,9 +1,9 @@
 import java.sql.*;
 import java.util.Scanner;
 public class ApplicationCentrale {
-    String salt = BCrypt.gensalt();
-    Connection conn = null;
-    Scanner scanner = new Scanner(System.in);
+    private String salt = BCrypt.gensalt();
+    private Connection conn = null;
+    private Scanner scanner = new Scanner(System.in);
     private PreparedStatement ajouterCours;
     private PreparedStatement ajouterEtudiant;
     private PreparedStatement inscrireEtudiantCours;
@@ -27,7 +27,7 @@ public class ApplicationCentrale {
         String url = "jdbc:postgresql://localhost:5432/postgres";
         try {
             //conn = DriverManager.getConnection(url, "francoisvandeputte", "");
-            conn = DriverManager.getConnection(url, "postgres", "");
+            conn = DriverManager.getConnection(url, "postgres", "F20022002f!");
         } catch (SQLException e) {
             System.out.println("Impossible de joindre le server !");
             System.exit(1);
@@ -52,9 +52,9 @@ public class ApplicationCentrale {
     }
 
     public void start() {
-        int numero;
+        int numero = 1;
 
-        do {
+        while (true) {
             System.out.println("1 - Ajouter un cours");
             System.out.println("2 - Ajouter un(e) étudiant(e)");
             System.out.println("3 - Inscrire un(e) étudiant(e) a un cours");
@@ -65,8 +65,23 @@ public class ApplicationCentrale {
             System.out.println("8 - Visualser toutes les compositions de groupe d'un projet");
             System.out.println("9 - Valider un groupe");
             System.out.println("10 - Valider tout les groupes d'un projet");
+            System.out.println("---");
+            System.out.println("0 - Quitter");
 
-            numero = Integer.parseInt(scanner.nextLine());
+            try {
+                numero = Integer.parseInt(scanner.nextLine());
+            } catch (NumberFormatException e) {
+                System.out.println("Veuillez entrer un entier\n");
+                continue;
+            }
+
+            if (numero == 0)
+                break;
+
+            if (numero < 0 || numero > 10) {
+                System.out.println("Veuillez entrer un entier entre 1 et 10\n");
+                continue;
+            }
 
             switch (numero) {
                 case 1 -> ajouterCours();
@@ -82,7 +97,16 @@ public class ApplicationCentrale {
                 default -> {
                 }
             }
-        } while (numero > 0 && numero < 11);
+        }
+        try {
+            conn.close();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+
+        scanner.close();
+
+        System.out.println("Sortie du programme");
     }
     public void  ajouterCours() {
         System.out.println("Ajouter un cours");
@@ -91,16 +115,25 @@ public class ApplicationCentrale {
         String codeCours = scanner.nextLine();
         System.out.println("Nom du cours: ");
         String nomCours = scanner.nextLine();
-        System.out.println("Crédits: ");
-        int credits = Integer.parseInt(scanner.nextLine());
-        System.out.println("Bloc: ");
-        int bloc = Integer.parseInt(scanner.nextLine());
+
+        int credits = 0;
+        int bloc = 0;
+        try {
+            System.out.println("Crédits: ");
+            credits = Integer.parseInt(scanner.nextLine());
+            System.out.println("Bloc: ");
+            bloc = Integer.parseInt(scanner.nextLine());
+        } catch (NumberFormatException e) {
+            System.out.println("Veuillez entrer un entier\n");
+            ajouterCours();
+        }
 
         try {
             ajouterCours.setString(1, codeCours);
             ajouterCours.setString(2, nomCours);
             ajouterCours.setInt(3, credits);
             ajouterCours.setInt(4, bloc);
+
             ajouterCours.executeQuery();
         } catch (SQLException se) {
             System.out.println(se.getMessage());
@@ -133,12 +166,14 @@ public class ApplicationCentrale {
 
         System.out.println("Code du cours: ");
         String codeCours = scanner.nextLine();
+
         System.out.println("Identifiant de l'étudiant: ");
-        int idEtudiant = Integer.parseInt(scanner.nextLine());
+        String emailEtudiant = scanner.nextLine();;
 
         try {
             inscrireEtudiantCours.setString(1, codeCours);
-            inscrireEtudiantCours.setInt(2, idEtudiant);
+            inscrireEtudiantCours.setString(2, emailEtudiant);
+
             inscrireEtudiantCours.executeQuery();
         } catch (SQLException se) {
             System.out.println(se.getMessage());
@@ -174,15 +209,24 @@ public class ApplicationCentrale {
 
         System.out.println("Identifiant du projet : ");
         String idProjet = scanner.nextLine();
-        System.out.println("Nombre de groupes : ");
-        int nombreGroupes = Integer.parseInt(scanner.nextLine());
-        System.out.println("Nombre maximum de membres par groupe : ");
-        int nombreMaxMembres = Integer.parseInt(scanner.nextLine());
+
+        int nombreGroupes = 0;
+        int nombreMaxMembres = 0;
+        try {
+            System.out.println("Nombre de groupes : ");
+            nombreGroupes = Integer.parseInt(scanner.nextLine());
+            System.out.println("Nombre maximum de membres par groupe : ");
+            nombreMaxMembres = Integer.parseInt(scanner.nextLine());
+        } catch (NumberFormatException e) {
+            System.out.println("Veuillez entrer un entier\n");
+            creerGroupe();
+        }
 
         try {
             creerGroupe.setString(1, idProjet);
             creerGroupe.setInt(2, nombreGroupes);
             creerGroupe.setInt(3, nombreMaxMembres);
+
             creerGroupe.executeQuery();
         } catch (SQLException se) {
             System.out.println(se.getMessage());
@@ -259,12 +303,20 @@ public class ApplicationCentrale {
 
         System.out.println("Identifiant du projet : ");
         String idProjet = scanner.nextLine();
-        System.out.println("Numéro du groupe : ");
-        int numeroGroupe = Integer.parseInt(scanner.nextLine());
+
+        int numeroGroupe = 0;
+        try {
+            System.out.println("Numéro du groupe : ");
+            numeroGroupe = Integer.parseInt(scanner.nextLine());
+        } catch (NumberFormatException e) {
+            System.out.println("Veuillez entrer un entier\n");
+            validerGroupes();
+        }
 
         try {
             validerGroupe.setString(1, idProjet);
             validerGroupe.setInt(2, numeroGroupe);
+
             validerGroupe.executeQuery();
         } catch (SQLException se) {
             System.out.println(se.getMessage());
@@ -278,6 +330,7 @@ public class ApplicationCentrale {
 
         try {
             validerGroupes.setString(1, idProjet);
+
             validerGroupes.executeQuery();
         } catch (SQLException se) {
             System.out.println(se.getMessage());

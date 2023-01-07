@@ -2,10 +2,10 @@ import java.sql.*;
 import java.util.Scanner;
 
 public class ApplicationEtudiante {
-    Connection conn = null;
-    Scanner scanner = new Scanner(System.in);
-    int idEtudiantConnecte = 0;
-    PreparedStatement getEtudiant;
+    private Connection conn = null;
+    private Scanner scanner = new Scanner(System.in);
+    private int idEtudiantConnecte = 0;
+    private PreparedStatement getEtudiant;
     private PreparedStatement visualiserCoursEtudiant;
     private PreparedStatement inscrireEtudiantGroupe;
     private PreparedStatement retirerEtudiantGroupe;
@@ -21,11 +21,11 @@ public class ApplicationEtudiante {
             System.exit(1);
         }
 
-         String url = "jdbc:postgresql://172.24.2.6:5432/dbfrancoisvandeputte";
-        //String url = "jdbc:postgresql://localhost:5432/postgres";
+        //String url = "jdbc:postgresql://172.24.2.6:5432/dbfrancoisvandeputte";
+        String url = "jdbc:postgresql://localhost:5432/postgres";
         try {
-            conn = DriverManager.getConnection(url, "damienlapinski", "");
-            //conn = DriverManager.getConnection(url, "postgres", "");
+            //conn = DriverManager.getConnection(url, "damienlapinski", "");
+            conn = DriverManager.getConnection(url, "postgres", "F20022002f!");
         } catch (SQLException e) {
             System.out.println("Impossible de joindre le server !");
             System.exit(1);
@@ -48,15 +48,15 @@ public class ApplicationEtudiante {
 
     public void start() {
         boolean connected = false;
+
         do {
             System.out.println("Email vinci:");
             String emailVinci = scanner.nextLine();
             System.out.println("Mot de passe:");
             String motDePasse = scanner.nextLine();
 
-            try {
+            try (ResultSet rs = getEtudiant.executeQuery()) {
                 getEtudiant.setString(1, emailVinci);
-                ResultSet rs = getEtudiant.executeQuery();
 
                 while (rs.next()) {
                     if (BCrypt.checkpw(motDePasse, rs.getString(2))) {
@@ -71,15 +71,30 @@ public class ApplicationEtudiante {
         } while (!connected);
 
         int numero;
-        do {
+        while (true) {
             System.out.println("1 - Visualiser les cours");
             System.out.println("2 - Se rajouter dans un groupe");
             System.out.println("3 - Se retirer d'un groupe");
             System.out.println("4 - Visualiser les projets des cours auxquels il est inscrit");
             System.out.println("5 - Visualiser les projets sans groupe");
             System.out.println("6 - Visualiser toutes les compositions de groupes incomplets d’un projet");
+            System.out.println("---");
+            System.out.println("0 - Quitter");
 
-            numero = Integer.parseInt(scanner.nextLine());
+            try {
+                numero = Integer.parseInt(scanner.nextLine());
+            } catch (NumberFormatException e) {
+                System.out.println("Veuillez entrer un entier\n");
+                continue;
+            }
+
+            if (numero == 0)
+                break;
+
+            if (numero < 0 || numero > 6) {
+                System.out.println("Veuillez entrer un entier entre 1 et 10\n");
+                continue;
+            }
 
             switch (numero) {
                 case 1 -> visualiserCoursEtudiant();
@@ -91,7 +106,16 @@ public class ApplicationEtudiante {
                 default -> {
                 }
             }
-        } while (numero > 0 && numero < 11);
+        }
+        try {
+            conn.close();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+
+        scanner.close();
+
+        System.out.println("Sortie du programme");
     }
 
     public void visualiserCoursEtudiant() {
@@ -122,9 +146,15 @@ public class ApplicationEtudiante {
 
         System.out.println("Identifiant du projet: ");
         String idProjet = scanner.nextLine();
-        System.out.println("Numero du groupe: ");
-        int numeroGroupe = Integer.parseInt(scanner.nextLine());
 
+        int numeroGroupe = 0;
+        try {
+            System.out.println("Numero du groupe: ");
+            numeroGroupe = Integer.parseInt(scanner.nextLine());
+        } catch (NumberFormatException e) {
+            System.out.println("Veuillez entrer un entier\n");
+            inscrireEtudiantGroupe();
+        }
 
         try {
             inscrireEtudiantGroupe.setString(1, idProjet);
