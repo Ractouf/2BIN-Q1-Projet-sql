@@ -25,7 +25,7 @@ public class ApplicationEtudiante {
         String url = "jdbc:postgresql://localhost:5432/postgres";
         try {
             //conn = DriverManager.getConnection(url, "damienlapinski", "");
-            conn = DriverManager.getConnection(url, "postgres", "F20022002f!");
+            conn = DriverManager.getConnection(url, "postgres", "");
         } catch (SQLException e) {
             System.out.println("Impossible de joindre le server !");
             System.exit(1);
